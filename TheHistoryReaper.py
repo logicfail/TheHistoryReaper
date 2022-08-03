@@ -10,13 +10,13 @@ import traceback
 
 # Number of seconds to wait after a change to configuration, before beginning to reap.  This is so users have
 # time to catch errors in case they accidentally set the limit too low.
-REAP_DELAY_SECONDS = 15
+REAP_DELAY_SECONDS = 60
 
 # How frequently to check for messages to be deleted (seconds)
-DELETE_MESSAGE_BATCH_FREQUENCY = 3
+DELETE_MESSAGE_BATCH_FREQUENCY = 60
 
 # How many messages to delete at a time (keep this low, or
-DELETE_MESSAGE_BATCH_LIMIT = 4
+DELETE_MESSAGE_BATCH_LIMIT = 20
 
 
 load_dotenv()
