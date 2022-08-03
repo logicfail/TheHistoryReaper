@@ -60,6 +60,10 @@ async def on_tick():
                     print(f"Channel went away, removing it {channel['channel']} on server {channel['server']}")
                     await channel_api.leave_channel(channel['server'], channel['channel'])
                     continue
+                except Exception:
+                    print(f"Unable to get channel {channel['channel']}")
+                    traceback.print_exc()
+                    continue
 
                 current_time = datetime.datetime.now().timestamp()
                 start_reaping_at = datetime.datetime.fromtimestamp(channel['config']['updated']) + \
@@ -68,10 +72,15 @@ async def on_tick():
                     now = datetime.datetime.utcnow()
                     before_date = now - datetime.timedelta(days=channel['config']['max_days'])
 
-                    to_reap = await channel_object.history(
-                        limit=DELETE_MESSAGE_BATCH_LIMIT,
-                        before=before_date
-                    ).flatten()
+                    try:
+                        to_reap = await channel_object.history(
+                            limit=DELETE_MESSAGE_BATCH_LIMIT,
+                            before=before_date
+                        ).flatten()
+                    except Exception:
+                        print(f"Unable to get history batch {channel_object.name}")
+                        traceback.print_exc()
+                        continue
 
                     print(f'Reaping {len(to_reap)} messages from {channel_object.name}')
 
