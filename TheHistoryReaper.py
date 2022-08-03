@@ -140,7 +140,6 @@ async def on_info(message):
             await message.channel.send(f"I am not reaping this channel.")
 
 
-
 @client.event
 async def on_message(message):
     if client.user.id != message.author.id:
