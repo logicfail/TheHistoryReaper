@@ -32,19 +32,19 @@ client = discord.Client()
 
 
 async def show_menu(message):
-    await message.channel.send(f'.reap <max_days> - set the maximum number of days to retain messages in\n'
-                               f'the current channel\n'
-                               f'.unreap - stop managing messages in the current channel\n'
-                               f".reap_info - get the current channel's configuration\n"
-                               f".reap_help - show all commands")
+    await message.channel.send(f'**.reap <max_days>** - *set the maximum number of days to retain messages in '
+                               f'the current channel*\n'
+                               f'**.unreap** - *stop managing messages in the current channel*\n'
+                               f"**.reap_info** - *get the current channel's configuration*\n"
+                               f"**.reap_help** - *show all commands*")
 
 
 async def show_error(message):
     await message.channel.send(f"I didn't understand that command!\n"
-                               f"Example: .reap_help\n"
-                               f"Example: .reap_info\n"
-                               f'Example: .reap 120\n'
-                               f'Example: .unreap')
+                               f"*Example: .reap_help*\n"
+                               f"*Example: .reap_info*\n"
+                               f'*Example: .reap 120*\n'
+                               f'*Example: .unreap*')
 
 
 @tasks.loop(seconds=DELETE_MESSAGE_BATCH_FREQUENCY)
