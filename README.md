@@ -23,8 +23,13 @@ In order for this bot to work, you will need to grant it the following permissio
 7. Select all the required permissions
 8. Copy the URL and paste it into your browser
 9. Allow the bot to join your server (you must have Manage Server permissions)
-10. Run TheHistoryReaper.py
-11. When you're satisfied the bot is working properly, edit .env to turn off DEBUG_MODE, then restart TheHistoryReaper.py
+10. Ensure 'channels.yaml' and 'log.txt' are writiable (chmod 666)
+11. Install python dependencies
+    - pip install discord
+    - pip install python-dotenv
+    - pip install pyyaml
+12. Run TheHistoryReaper.py
+13. When you're satisfied the bot is working properly, edit .env to turn off DEBUG_MODE, then restart TheHistoryReaper.py
 
 ## Usage
 You can enable and disable history deletion in any channel by using the bot's commands.  If you make a change to a channels configuration, it will freeze the deletion process for a period of time, to allow you to fix any mistakes before messages begin getting deleted.
