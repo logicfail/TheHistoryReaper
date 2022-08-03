@@ -7,6 +7,7 @@ import channels as channel_api
 import datetime
 import re
 import traceback
+import logging
 
 load_dotenv()
 
@@ -16,6 +17,9 @@ DEBUG_MODE = os.getenv('DEBUG_MODE') == 'True'
 
 # The oauth2 token for this bot
 TOKEN = os.getenv('DISCORD_TOKEN')
+
+# The log file (only logs actions, not the message content)
+LOG_FILE = "log.txt"
 
 # Number of seconds to wait after a change to configuration, before beginning to reap.  This is so users have
 # time to catch errors in case they accidentally set the limit too low.
@@ -29,7 +33,7 @@ DELETE_MESSAGE_BATCH_LIMIT = 20
 
 
 client = discord.Client()
-
+logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s [%(levelname)s]: %(message)s', )
 
 async def show_menu(message):
     await message.channel.send(f'**.reap <max_days>** - *set the maximum number of days to retain messages in '
@@ -63,12 +67,12 @@ async def on_tick():
                 try:
                     channel_object = await client.fetch_channel(channel['channel'])
                 except discord.errors.NotFound:
-                    print(f"Channel went away, removing it {channel['channel']} on server {channel['server']}")
+                    logging.warning(f"Channel went away, removing it {channel['channel']} "
+                                    f"on server {channel['server']}")
                     await channel_api.leave_channel(channel['server'], channel['channel'])
                     continue
                 except Exception:
-                    print(f"Unable to get channel {channel['channel']}")
-                    traceback.print_exc()
+                    logging.exception(f"Unable to get channel {channel['channel']}")
                     continue
 
                 # Don't reap channels who's configuration changed less than REAP_DELAY_SECONDS ago
@@ -85,25 +89,24 @@ async def on_tick():
                             before=before_date
                         ).flatten()
                     except Exception:
-                        print(f"Unable to get history batch {channel_object.name}")
-                        traceback.print_exc()
+                        logging.exception(f"Unable to get history batch {channel_object.name}")
                         continue
 
                     # Loop over the individual messages and delete them one-by-one
-                    print(f'Reaping {len(to_reap)} messages from {channel_object.name} '
-                          f'{" (DEBUG_MODE)" if DEBUG_MODE else ""}')
-                    for message in to_reap:
-                        try:
-                            await message.delete()
-                            if DEBUG_MODE:
-                                # If we're in debug mode, only delete 1 message per channel at a time.
-                                break
-                        except Exception:
-                            print(f"Unable to delete message {message.id}")
-                            traceback.print_exc()
+                    if to_reap:
+                        logging.info(f'Reaping {len(to_reap)} messages from {channel_object.id} ({channel_object.name})'
+                              f'{" in DEBUG_MODE" if DEBUG_MODE else ""}')
+                        for message in to_reap:
+                            try:
+                                await message.delete()
+                                if DEBUG_MODE:
+                                    # If we're in debug mode, only delete 1 message per channel at a time.
+                                    break
+                            except Exception:
+                                logging.exception(f"Unable to delete message {message.id}")
                 else:
-                    print(f"Skipping channel {channel_object.name} because the config was "
-                          f"updated less than {REAP_DELAY_SECONDS} seconds ago")
+                    logging.debug(f"Skipping channel {channel_object.name} because the config was "
+                                  f"updated less than {REAP_DELAY_SECONDS} seconds ago")
 
 
 async def on_join(message):
@@ -116,6 +119,9 @@ async def on_join(message):
                 message.channel.id,
                 max_days
         ):
+            logging.info(f"{message.author.name}#{message.author.discriminator} updated channel configuration "
+                         f"{message.channel.id} ({message.channel.name})"
+                         f" in server {message.guild.id} ({message.guild.name}) to {max_days}")
             await message.channel.send(f'I will proudly start reaping {message.channel.name} '
                                        f'for you in about {REAP_DELAY_SECONDS} seconds!\n'
                                        f'Messages older than {max_days} day{"s" if max_days != 1 else ""} '
@@ -129,6 +135,9 @@ async def on_leave(message):
     leave_channel = message.content.split(" ")
     if len(leave_channel) == 1:
         if await channel_api.leave_channel(message.guild.id, message.channel.id):
+            logging.info(f"{message.author.name}#{message.author.discriminator} removed channel configuration "
+                         f"{message.channel.id} ({message.channel.name})"
+                         f" in server {message.guild.id} ({message.guild.name})")
             await message.channel.send(f'No longer reaping {message.channel.name}!')
         else:
             await message.channel.send(f"I wasn't reaping this channel!")
@@ -176,7 +185,7 @@ async def on_message(message):
 @client.event
 async def on_ready():
     for guild in client.guilds:
-        print(f'{client.user} has connected to Discord {guild.name}!')
+        logging.info(f'{client.user} has connected to {guild.id} ({guild.name})!')
 
     # Set the status of the bot, so people know how to use it.
     game = discord.Game(".reap_help for info")
@@ -189,4 +198,4 @@ on_tick.start()
 try:
     client.run(TOKEN)
 except discord.errors.LoginFailure:
-    print("OAuth2 token is not valid, please update it in .env")
+    logging.exception("OAuth2 token is not valid, please update it in .env")
