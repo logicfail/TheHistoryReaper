@@ -127,17 +127,17 @@ async def on_leave(message):
 
 
 async def on_info(message):
-    channels = await channel_api.get_channels()
-    for channel in channels:
-        if channel['server'] == message.guild.id and channel['channel'] == message.channel.id:
-            info = f"This channel deletes all messages older than "\
-                      f" {channel['config']['max_days']} "\
-                      f"day{'s' if channel['config']['max_days'] != 1 else ''}!"
-            if DEBUG_MODE:
-                info += "\n" + f'*{"Operating in debug mode (1 message at a time)" if DEBUG_MODE else ""}*'
-            await message.channel.send(info)
-        else:
-            await message.channel.send(f"I am not reaping this channel.")
+    channels = [c for c in await channel_api.get_channels()
+                if c['server'] == message.guild.id and c['channel'] == message.channel.id]
+    if channels:
+        info = f"This channel deletes all messages older than "\
+                  f" {channels[0]['config']['max_days']} "\
+                  f"day{'s' if channels[0]['config']['max_days'] != 1 else ''}!"
+        if DEBUG_MODE:
+            info += "\n" + f'*{"Operating in debug mode (1 message at a time)" if DEBUG_MODE else ""}*'
+        await message.channel.send(info)
+    else:
+        await message.channel.send(f"I am not reaping this channel.")
 
 
 @client.event
