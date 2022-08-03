@@ -15,7 +15,7 @@ load_dotenv()
 # deleting from the correct starting point.
 DEBUG_MODE = os.getenv('DEBUG_MODE') == 'True'
 
-# The oauth2 token for this bot
+# The bot access token for this bot
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 # The log file (only logs actions, not the message content)
@@ -206,4 +206,4 @@ on_tick.start()
 try:
     client.run(TOKEN)
 except discord.errors.LoginFailure:
-    logging.exception("OAuth2 token is not valid, please update it in .env")
+    logging.exception("Bot token is not valid, please update it in .env")
