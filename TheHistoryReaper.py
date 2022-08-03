@@ -24,6 +24,22 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 
 
+async def show_menu(message):
+    await message.channel.send(f'.reap <max_days> - set the maximum number of days to retain messages in\n'
+                               f'the current channel\n'
+                               f'.unreap - stop managing messages in the current channel\n'
+                               f".reap_info - get the current channel's configuration\n"
+                               f".reap_help - show all commands")
+
+
+async def show_error(message):
+    await message.channel.send(f"I didn't understand that command!\n"
+                               f"Example: .reap_help\n"
+                               f"Example: .reap_info\n"
+                               f'Example: .reap 120\n'
+                               f'Example: .unreap')
+
+
 @tasks.loop(seconds=DELETE_MESSAGE_BATCH_FREQUENCY)
 async def on_tick():
     if client.is_ready():
@@ -73,14 +89,11 @@ async def on_join(message):
                 max_days
         ):
             await message.channel.send(f'I will proudly start reaping {message.channel.name} '
-                                       f'for you in about {REAP_DELAY_SECONDS} seconds!')
-            await message.channel.send(
-                f'Messages older than {max_days} day{"s" if max_days != 1 else ""} will be removed.'
-            )
-
+                                       f'for you in about {REAP_DELAY_SECONDS} seconds!\n'
+                                       f'Messages older than {max_days} day{"s" if max_days != 1 else ""} '
+                                       f'will be removed... It may take a while.')
     else:
-        await message.channel.send(f"I didn't understand that command!")
-        await message.channel.send(f'Example: .reap 120')
+        await show_error(message)
 
 
 async def on_leave(message):
@@ -91,8 +104,19 @@ async def on_leave(message):
         else:
             await message.channel.send(f"I wasn't reaping this channel!")
     else:
-        await message.channel.send(f"I didn't understand that command!")
-        await message.channel.send(f"Example: .unreap")
+        await show_error(message)
+
+
+async def on_info(message):
+    channels = await channel_api.get_channels()
+    for channel in channels:
+        if channel['server'] == message.guild.id and channel['channel'] == message.channel.id:
+            await message.channel.send(f"This channel deletes all messages older than "
+                                       f" {channel['config']['max_days']} "
+                                       f"day{'s' if channel['config']['max_days'] != 1 else ''}!")
+        else:
+            await message.channel.send(f"I am not reaping this channel.")
+
 
 
 @client.event
@@ -100,12 +124,19 @@ async def on_message(message):
     if client.user.id != message.author.id:
         # only allow administrators to issue commands
         permissions = message.author.permissions_in(message.channel)
+        command = message.content.split(" ")
         if permissions.administrator:
-            command = message.content.split(" ")
+            # Only administrators can add/remove channels or update their config
             if len(command) >= 2 and command[0] == '.reap':
                 await on_join(message)
             elif len(command) >= 1 and command[0] == '.unreap':
                 await on_leave(message)
+
+        # We can let anyone get the status
+        if len(command) >= 1 and command[0] == ".reap_help":
+            await show_menu(message)
+        elif len(command) >= 1 and command[0] == ".reap_info":
+            await on_info(message)
 
 
 @client.event
