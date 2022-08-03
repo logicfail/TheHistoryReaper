@@ -172,4 +172,7 @@ async def on_ready():
 on_tick.start()
 
 # Begin the long running client loop
-client.run(TOKEN)
+try:
+    client.run(TOKEN)
+except discord.errors.LoginFailure:
+    print("OAuth2 token is not valid, please update it in .env")
