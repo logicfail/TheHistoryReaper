@@ -65,7 +65,6 @@ async def leave_channel(server_id, channel_id):
         return len(new_channels) != len(original_channels)
 
 
-
 async def get_channels():
     async with channel_lock:
         with open(CHANNEL_FILE) as channels:

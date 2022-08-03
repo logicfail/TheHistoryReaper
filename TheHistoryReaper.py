@@ -23,6 +23,7 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 
+
 @tasks.loop(seconds=DELETE_MESSAGE_BATCH_FREQUENCY)
 async def on_tick():
     if client.is_ready():
@@ -38,21 +39,29 @@ async def on_tick():
                     continue
 
                 current_time = datetime.datetime.now().timestamp()
-                start_reaping_at = datetime.datetime.fromtimestamp(channel['config']['updated']) + datetime.timedelta(seconds=REAP_DELAY_SECONDS)
+                start_reaping_at = datetime.datetime.fromtimestamp(channel['config']['updated']) + \
+                                   datetime.timedelta(seconds=REAP_DELAY_SECONDS)
                 if current_time > start_reaping_at.timestamp():
                     now = datetime.datetime.utcnow()
                     before_date = now - datetime.timedelta(days=channel['config']['max_days'])
 
-                    to_reap = await channel_object.history(limit=DELETE_MESSAGE_BATCH_LIMIT, before=before_date).flatten()
+                    to_reap = await channel_object.history(
+                        limit=DELETE_MESSAGE_BATCH_LIMIT,
+                        before=before_date
+                    ).flatten()
+
                     print(f'Reaping {len(to_reap)} messages from {channel_object.name}')
+
                     for message in to_reap:
                         try:
                             await message.delete()
-                        except Exception as e:
+                        except Exception:
                             print(f"Unable to delete message {message.id}")
                             traceback.print_exc()
                 else:
-                    print(f"Skipping channel {channel_object.name} because the config was updated less than {REAP_DELAY_SECONDS} seconds ago")
+                    print(f"Skipping channel {channel_object.name} because the config was "
+                          f"updated less than {REAP_DELAY_SECONDS} seconds ago")
+
 
 async def on_join(message):
     join_channel = message.content.split(" ", 2)
@@ -63,7 +72,8 @@ async def on_join(message):
                 message.channel.id,
                 max_days
         ):
-            await message.channel.send(f'I will proudly start reaping {message.channel.name} in {REAP_DELAY_SECONDS} seconds sir!')
+            await message.channel.send(f'I will proudly start reaping {message.channel.name} '
+                                       f'in {REAP_DELAY_SECONDS} seconds sir!')
             await message.channel.send(
                 f'Messages older than {max_days} day{"s" if max_days != 1 else ""} will be removed'
             )
@@ -109,4 +119,3 @@ on_tick.start()
 
 # Begin the long running client loop
 client.run(TOKEN)
-
