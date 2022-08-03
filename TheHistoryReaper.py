@@ -36,19 +36,24 @@ client = discord.Client()
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s [%(levelname)s]: %(message)s', )
 
 async def show_menu(message):
-    await message.channel.send(f'**.reap <max_days>** - *set the maximum number of days to retain messages in '
-                               f'the current channel*\n'
-                               f'**.unreap** - *stop managing messages in the current channel*\n'
-                               f"**.reap_info** - *get the current channel's configuration*\n"
-                               f"**.reap_help** - *show all commands*")
+    permissions = message.author.permissions_in(message.channel)
+    menu = f"**.reap_info** - *get the current channel's configuration*\n"\
+           f"**.reap_help** - *show all commands*\n"
+    if permissions.administrator:
+        menu += f'**.reap <max_days>** - *set the maximum number of days to retain messages in the current channel*\n'\
+               f'**.unreap** - *stop managing messages in the current channel*'
+    await message.channel.send(menu, reference=message)
 
 
 async def show_error(message):
-    await message.channel.send(f"I didn't understand that command!\n"
-                               f"*Example: .reap_help*\n"
-                               f"*Example: .reap_info*\n"
-                               f'*Example: .reap 120*\n'
-                               f'*Example: .unreap*')
+    permissions = message.author.permissions_in(message.channel)
+    info = f"I didn't understand that command!\n"\
+           f"*Example: .reap_help*\n"\
+           f"*Example: .reap_info*\n"
+    if permissions.administrator:
+        info += f'*Example: .reap 120*\n'\
+                f'*Example: .unreap*'
+    await message.channel.send(info, reference=message)
 
 
 @tasks.loop(seconds=DELETE_MESSAGE_BATCH_FREQUENCY)
