@@ -54,8 +54,6 @@ async def join_channel(server_id, channel_id, max_days=99999999):
         with open(CHANNEL_FILE, 'w') as channels:
             yaml.dump(current_channels, channels)
 
-        return True
-
 
 async def leave_channel(server_id, channel_id):
     async with channel_lock:
