@@ -82,8 +82,9 @@ async def on_tick():
                         traceback.print_exc()
                         continue
 
-                    print(f'Reaping {len(to_reap)} messages from {channel_object.name}')
-
+                    # Loop over the individual messages and delete them one-by-one
+                    print(f'Reaping {len(to_reap)} messages from {channel_object.name} '
+                          f'{" (DEBUG_MODE)" if DEBUG_MODE else ""}')
                     for message in to_reap:
                         try:
                             await message.delete()
