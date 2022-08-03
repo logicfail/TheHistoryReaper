@@ -143,9 +143,9 @@ async def on_leave(message):
             logging.info(f"{message.author.name}#{message.author.discriminator} removed channel configuration "
                          f"{message.channel.id} ({message.channel.name})"
                          f" in server {message.guild.id} ({message.guild.name})")
-            await message.channel.send(f'No longer reaping {message.channel.name}!')
+            await message.channel.send(f'No longer reaping {message.channel.name}!', reference=message)
         else:
-            await message.channel.send(f"I wasn't reaping this channel!")
+            await message.channel.send(f"I wasn't reaping this channel!", reference=message)
     else:
         await show_error(message)
 
@@ -160,9 +160,9 @@ async def on_info(message):
                   f"day{'s' if channels[0]['config']['max_days'] != 1 else ''}!"
         if DEBUG_MODE:
             info += "\n" + f'*{"Operating in debug mode (1 message at a time)" if DEBUG_MODE else ""}*'
-        await message.channel.send(info)
+        await message.channel.send(info, reference=message)
     else:
-        await message.channel.send(f"I am not reaping this channel.")
+        await message.channel.send(f"I am not reaping this channel.", reference=message)
 
 
 @client.event
