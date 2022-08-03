@@ -73,14 +73,13 @@ async def on_join(message):
                 max_days
         ):
             await message.channel.send(f'I will proudly start reaping {message.channel.name} '
-                                       f'in {REAP_DELAY_SECONDS} seconds sir!')
+                                       f'for you in about {REAP_DELAY_SECONDS} seconds!')
             await message.channel.send(
-                f'Messages older than {max_days} day{"s" if max_days != 1 else ""} will be removed'
+                f'Messages older than {max_days} day{"s" if max_days != 1 else ""} will be removed.'
             )
-        else:
-            await message.channel.send(f'Already reaping this channel sir!')
+
     else:
-        await message.channel.send(f"I didn't understand that sir!")
+        await message.channel.send(f"I didn't understand that command!")
         await message.channel.send(f'Example: .reap 120')
 
 
@@ -88,11 +87,11 @@ async def on_leave(message):
     leave_channel = message.content.split(" ")
     if len(leave_channel) == 1:
         if await channel_api.leave_channel(message.guild.id, message.channel.id):
-            await message.channel.send(f'No longer reaping {message.channel.name} sir!')
+            await message.channel.send(f'No longer reaping {message.channel.name}!')
         else:
-            await message.channel.send(f"I wasn't reaping this channel sir!")
+            await message.channel.send(f"I wasn't reaping this channel!")
     else:
-        await message.channel.send(f"I didn't understand that sir!")
+        await message.channel.send(f"I didn't understand that command!")
         await message.channel.send(f"Example: .unreap")
 
 
