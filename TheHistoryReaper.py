@@ -8,6 +8,15 @@ import datetime
 import re
 import traceback
 
+load_dotenv()
+
+# When enabled, the bot will only delete 1 message at a time, allowing you to validate that it is in fact
+# deleting from the correct starting point.
+DEBUG_MODE = os.getenv('DEBUG_MODE') == 'True'
+
+# The oauth2 token for this bot
+TOKEN = os.getenv('DISCORD_TOKEN')
+
 # Number of seconds to wait after a change to configuration, before beginning to reap.  This is so users have
 # time to catch errors in case they accidentally set the limit too low.
 REAP_DELAY_SECONDS = 60
@@ -19,8 +28,6 @@ DELETE_MESSAGE_BATCH_FREQUENCY = 60
 DELETE_MESSAGE_BATCH_LIMIT = 20
 
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 
 
@@ -71,6 +78,9 @@ async def on_tick():
                     for message in to_reap:
                         try:
                             await message.delete()
+                            if DEBUG_MODE:
+                                # If we're in debug mode, only delete 1 message per channel at a time.
+                                break
                         except Exception:
                             print(f"Unable to delete message {message.id}")
                             traceback.print_exc()
@@ -111,9 +121,12 @@ async def on_info(message):
     channels = await channel_api.get_channels()
     for channel in channels:
         if channel['server'] == message.guild.id and channel['channel'] == message.channel.id:
-            await message.channel.send(f"This channel deletes all messages older than "
-                                       f" {channel['config']['max_days']} "
-                                       f"day{'s' if channel['config']['max_days'] != 1 else ''}!")
+            info = f"This channel deletes all messages older than "\
+                      f" {channel['config']['max_days']} "\
+                      f"day{'s' if channel['config']['max_days'] != 1 else ''}!"
+            if DEBUG_MODE:
+                info += "\n" + f'*{"Operating in debug mode (1 message at a time)" if DEBUG_MODE else ""}*'
+            await message.channel.send(info)
         else:
             await message.channel.send(f"I am not reaping this channel.")
 
