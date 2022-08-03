@@ -22,11 +22,17 @@ def _get_channels():
 
 
 async def join_channel(server_id, channel_id, max_days=99999999):
+    """ Add or update a channel's configuration to the list of managed channels
+    :param server_id: The numeric ID of the guild/server
+    :param channel_id: The numeric ID of the channel
+    :param max_days: The maximum number of days to retain messages
+    """
+    # Make sure we have exclusive access to the channel configuration file
     async with channel_lock:
         # Get the current list of channel configurations
         current_channels = _get_channels()
 
-        # dont add it if we already have it
+        # Update it if we already have the channel
         found = False
         for channel in current_channels:
             if channel['channel'] == channel_id and channel['server'] == server_id:
@@ -38,7 +44,7 @@ async def join_channel(server_id, channel_id, max_days=99999999):
                 )
                 found = True
 
-        # Add the new channel
+        # Add the channel if its not already in the file
         if not found:
             current_channels = current_channels + [
                 {
@@ -51,19 +57,30 @@ async def join_channel(server_id, channel_id, max_days=99999999):
                 }
             ]
 
+        # Write the updated channel file
         with open(CHANNEL_FILE, 'w') as channels:
             yaml.dump(current_channels, channels)
 
 
 async def leave_channel(server_id, channel_id):
+    """ Remove a channel from the list of managed channels
+    :param server_id: The numeric guild/server ID
+    :param channel_id: The numeric channel ID
+    :return: True if the channel was being monitored but was removed, False if it was not being monitored
+                in the first place.
+    """
+    # Make sure we have exclusive access to the channel configuration file
     async with channel_lock:
         # Get the list of channel configurations
         original_channels = _get_channels()
 
+        # Remove the one with the matching ID's
         new_channels = [
             channel for channel in original_channels if
             channel['channel'] != channel_id and channel['server'] == server_id
         ]
+
+        # Write the new configuration
         with open(CHANNEL_FILE, 'w') as channels:
             yaml.dump(new_channels, channels)
 
@@ -72,6 +89,7 @@ async def leave_channel(server_id, channel_id):
 
 
 async def get_channels():
+    # Make sure we have exclusive access to the channel configuration file
     async with channel_lock:
         # return the current channel configuraitons
         return _get_channels()
