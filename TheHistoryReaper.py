@@ -49,6 +49,12 @@ async def show_error(message):
 
 @tasks.loop(seconds=DELETE_MESSAGE_BATCH_FREQUENCY)
 async def on_tick():
+    """ Periodically loop over all the managed channels and request any messages older than the
+    configured date (max DELETE_MESSAGE_BATCH_LIMIT).  Then one by one, delete the messages.  When
+    this routine runs again, the next batch of messages older than the configured date will be deleted.
+    This ensures that we don't flood the discord API with message delete requests or request huge batches
+    of messages that would otherwise slow the bot down.
+    """
     if client.is_ready():
         channels = await channel_api.get_channels()
         if channels:
@@ -65,13 +71,14 @@ async def on_tick():
                     traceback.print_exc()
                     continue
 
+                # Don't reap channels who's configuration changed less than REAP_DELAY_SECONDS ago
                 current_time = datetime.datetime.now().timestamp()
                 start_reaping_at = datetime.datetime.fromtimestamp(channel['config']['updated']) + \
                                    datetime.timedelta(seconds=REAP_DELAY_SECONDS)
                 if current_time > start_reaping_at.timestamp():
+                    # Request a batch of messages older than the configured date
                     now = datetime.datetime.utcnow()
                     before_date = now - datetime.timedelta(days=channel['config']['max_days'])
-
                     try:
                         to_reap = await channel_object.history(
                             limit=DELETE_MESSAGE_BATCH_LIMIT,
@@ -100,6 +107,7 @@ async def on_tick():
 
 
 async def on_join(message):
+    """ Start managing  the current channel, or update its existing retention period """
     join_channel = message.content.split(" ", 2)
     if len(join_channel) == 2 and re.match(r"^[0-9]{1,4}$", join_channel[1]):
         max_days = int(join_channel[1])
@@ -117,6 +125,7 @@ async def on_join(message):
 
 
 async def on_leave(message):
+    """ Stop managing the current channel """
     leave_channel = message.content.split(" ")
     if len(leave_channel) == 1:
         if await channel_api.leave_channel(message.guild.id, message.channel.id):
@@ -128,6 +137,7 @@ async def on_leave(message):
 
 
 async def on_info(message):
+    """ Get the configuration for the current channel """
     channels = [c for c in await channel_api.get_channels()
                 if c['server'] == message.guild.id and c['channel'] == message.channel.id]
     if channels:
@@ -143,8 +153,10 @@ async def on_info(message):
 
 @client.event
 async def on_message(message):
+    """ Handle a new message.  This will delegate to the proper command handler if the message is a command. """
+    # Don't consider messages written by this bot
     if client.user.id != message.author.id:
-        # only allow administrators to issue commands
+        # only allow administrators to update channel configuration
         permissions = message.author.permissions_in(message.channel)
         command = message.content.split(" ")
         if permissions.administrator:
@@ -166,6 +178,7 @@ async def on_ready():
     for guild in client.guilds:
         print(f'{client.user} has connected to Discord {guild.name}!')
 
+    # Set the status of the bot, so people know how to use it.
     game = discord.Game(".reap_help for info")
     await client.change_presence(status=discord.Status.online, activity=game)
 
