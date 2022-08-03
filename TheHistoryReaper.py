@@ -119,18 +119,21 @@ async def on_join(message):
     join_channel = message.content.split(" ", 2)
     if len(join_channel) == 2 and re.match(r"^[0-9]{1,4}$", join_channel[1]):
         max_days = int(join_channel[1])
-        await channel_api.join_channel(
-                message.guild.id,
-                message.channel.id,
-                max_days
-        )
-        logging.info(f"{message.author.name}#{message.author.discriminator} updated channel configuration "
-                     f"{message.channel.id} ({message.channel.name})"
-                     f" in server {message.guild.id} ({message.guild.name}) to {max_days}")
-        await message.channel.send(f'I will proudly start reaping {message.channel.name} '
-                                   f'for you in about {REAP_DELAY_SECONDS} seconds!\n'
-                                   f'Messages older than {max_days} day{"s" if max_days != 1 else ""} '
-                                   f'will be removed... It may take a while.', reference=message)
+        if max_days >= 1:
+            await channel_api.join_channel(
+                    message.guild.id,
+                    message.channel.id,
+                    max_days
+            )
+            logging.info(f"{message.author.name}#{message.author.discriminator} updated channel configuration "
+                         f"{message.channel.id} ({message.channel.name})"
+                         f" in server {message.guild.id} ({message.guild.name}) to {max_days}")
+            await message.channel.send(f'I will proudly start reaping {message.channel.name} '
+                                       f'for you in about {REAP_DELAY_SECONDS} seconds!\n'
+                                       f'Messages older than {max_days} day{"s" if max_days != 1 else ""} '
+                                       f'will be removed... It may take a while.', reference=message)
+        else:
+            await message.channel.send(f'Sorry, but the minimum retention period is 1 day.', reference=message)
     else:
         await show_error(message)
 
