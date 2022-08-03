@@ -144,6 +144,9 @@ async def on_ready():
     for guild in client.guilds:
         print(f'{client.user} has connected to Discord {guild.name}!')
 
+    game = discord.Game(".reap_help for info")
+    await client.change_presence(status=discord.Status.online, activity=game)
+
 # Begin the cleanup background task
 on_tick.start()
 
